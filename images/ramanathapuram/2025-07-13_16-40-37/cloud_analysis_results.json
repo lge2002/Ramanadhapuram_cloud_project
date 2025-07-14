@@ -1,0 +1,44 @@
+[
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Kamudi",
+        "values": "20.42%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-13 16:40:37"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Mudukulattur",
+        "values": "13.54%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-13 16:40:37"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Paramakkudi",
+        "values": "25.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-13 16:40:37"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Ramanathapuram",
+        "values": "3.37%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-13 16:40:37"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Rameswaram",
+        "values": "9.63%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-13 16:40:37"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Tiruvadanai",
+        "values": "0.54%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-13 16:40:37"
+    }
+]

@@ -1,0 +1,51 @@
+[
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Paramakudi",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Tiruvadanai",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Mudukulathur",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Kadaladi",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Kamuthi",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Ramanathapuram",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    },
+    {
+        "district": "Ramanathapuram",
+        "taluk": "Rameswaram",
+        "values": "0.00%",
+        "type": "Cloud Coverage",
+        "timestamp": "2025-07-11 10:00:00"
+    }
+]

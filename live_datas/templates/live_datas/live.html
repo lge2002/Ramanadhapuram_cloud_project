@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Ramanadhapuram Cloud Analysis Data</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #334155;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 2rem;
+        }
+        h1 {
+            color: #1e293b;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 0.75rem;
+            overflow: hidden; /* Ensures rounded corners apply to table content */
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: #ffffff;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc; /* Slate 50 */
+        }
+        tr:hover {
+            background-color: #e0e7ff; /* Indigo 100 */
+            transition: background-color 0.2s ease-in-out;
+        }
+        td {
+            color: #475569; /* Slate 700 */
+        }
+        .no-data-message {
+            text-align: center;
+            color: #64748b;
+            font-style: italic;
+            padding: 2rem;
+            font-size: 1.125rem;
+        }
+        #last-updated {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        #loading-indicator {
+            display: none; /* Hidden by default */
+            text-align: center;
+            margin-top: 1rem;
+            color: #4f46e5;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center p-8 bg-gray-100">
+    <div class="container">
+        <h1 class="text-4xl font-bold text-center mb-6 text-indigo-800">Live Ramanadhapuram Cloud Analysis Data</h1>
+          <a href="/report/" class="bg-green-600 rounded-xl text-white px-4 py-2 transition duration-200">Go to Report</a>
+        <div id="loading-indicator" class="text-indigo-600 font-semibold mb-4">Loading live data...</div>
+        <p id="last-updated" class="text-gray-600 text-sm mb-4">Last Updated: Never</p>
+
+        <div class="overflow-x-auto rounded-lg shadow-md">
+            <table class="min-w-full bg-white">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider bg-indigo-600 rounded-tl-lg">District</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider bg-indigo-600">Values</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider bg-indigo-600">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider bg-indigo-600 rounded-tr-lg">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="live-data-table-body" class="divide-y divide-gray-200">
+                    <!-- Data will be inserted here by JavaScript -->
+                    {% if cloud_analysis_data %}
+                        {% for data in cloud_analysis_data %}
+                            <tr class="hover:bg-indigo-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ data.city }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ data.values }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ data.type }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ data.timestamp|date:"Y-m-d H:i:s" }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr id="no-data-row">
+                            <td colspan="4" class="no-data-message">No cloud analysis data available in the database.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.getElementById('live-data-table-body');
+        const lastUpdatedSpan = document.getElementById('last-updated');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        function fetchLiveData() {
+            loadingIndicator.style.display = 'block';
+
+            fetch('?format=json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    tableBody.innerHTML = ''; // Clear old data
+
+                    if (data.cloud_analysis_data && data.cloud_analysis_data.length > 0) {
+                        data.cloud_analysis_data.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.className = 'hover:bg-indigo-50';
+                            row.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.city}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.values}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.type}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.timestamp}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    } else {
+                        const row = document.createElement('tr');
+                        row.id = 'no-data-row';
+                        row.innerHTML = `<td colspan="4" class="no-data-message">No cloud analysis data available in the database.</td>`;
+                        tableBody.appendChild(row);
+                    }
+
+                    const now = new Date();
+                    lastUpdatedSpan.textContent = `Last Updated: ${now.toLocaleTimeString()}`;
+                })
+                .catch(error => {
+                    console.error('Error fetching live data:', error);
+                    const now = new Date();
+                    lastUpdatedSpan.textContent = `Last Updated: Error (${now.toLocaleTimeString()})`;
+                })
+                .finally(() => {
+                    loadingIndicator.style.display = 'none';
+                });
+        }
+
+        fetchLiveData();
+        setInterval(fetchLiveData, 10000); // every 10 seconds
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramanathapuram Cloud Analysis Report</title>
+    <style>
+
+        /* General Body and Typography */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; /* Remove default body margin */
+            padding: 20px; /* Add overall padding to content */
+            background-color: #f0f2f5; /* Lighter background for a modern feel */
+            color: #333;
+            line-height: 1.6;
+            display: flex; /* Use flexbox for the entire body */
+            flex-direction: column; /* Stack header and main content vertically */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            position: relative; /* Needed for absolute positioning of the button */
+        }
+        h1 {
+            color: #1a4a7a; /* Deeper blue for main heading */
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em; /* Larger main title */
+            font-weight: 700;
+        }
+        h2 {
+            color: #2b6cb0; /* Slightly lighter blue for section headings */
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        h3 {
+            color: #2c5282; /* Even lighter blue for sub-headings */
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .go-live-button {
+            background-color: #28a745; /* green */
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .go-live-button:hover {
+            background-color: #218838;
+        }
+
+        .button-fixed-top-right {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000; /* Make sure it's on top */
+        }
+        /* NEW: Download Button Container Styling */
+        .download-button-container {
+            position: absolute; /* Position relative to the nearest positioned ancestor (body in this case) */
+            top: 20px;          /* Distance from the top */
+            right: 20px;        /* Distance from the right */
+            z-index: 100;       /* Ensure it stays on top of other content */
+        }
+
+        .download-button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #28a745; /* Green color for download */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Softer shadow */
+        }
+
+        .download-button:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3); /* More prominent shadow on hover */
+        }
+
+        .download-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Main Layout Container */
+        .main-content-wrapper {
+            display: flex;
+            flex-direction: column; /* Stack filter/image section and data table vertically */
+            flex-grow: 1; /* Allow this wrapper to take available space */
+            max-width: 1600px; /* Increased further for even bigger layout */
+            margin: 0 auto; /* Center the main content */
+            width: 100%; /* Ensure it takes full width within max-width */
+        }
+
+        /* Top Section: Filter and Image View Side-by-Side */
+        .top-section-flex {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 20px; /* Space between filter and image containers */
+            margin-bottom: 20px; /* Space below this section */
+        }
+
+        /* Container Styling */
+        .filter-container,
+        .image-selection-container,
+        .data-section {
+            padding: 30px; /* Increased padding */
+            background-color: #ffffff;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); /* Softer, more prominent shadow */
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        .filter-container {
+            flex: 0 0 350px; /* Base width for filter, can be adjusted */
+            min-width: 320px; /* Minimum width to prevent crushing */
+        }
+
+        .image-selection-container {
+            flex: 1; /* Allow image container to grow and take remaining space */
+            min-width: 800px; /* SIGNIFICANTLY INCREASED FOR BIGGER MAP */
+        }
+
+        /* Form Elements - Labels, Inputs, Selects */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600; /* Bolder labels */
+            color: #4a5568; /* Darker grey for labels */
+            text-align: left; /* Align labels to the left */
+        }
+
+        .filter-container input[type="date"],
+        .filter-container select,
+        .time-select-group {
+            padding: 10px 15px; /* Slightly more padding */
+            font-size: 1rem;
+            border-radius: 8px; /* Slightly more rounded */
+            border: 1px solid #cbd5e0; /* Lighter, subtle border */
+            margin-bottom: 15px; /* More space below each field */
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s; /* Smooth transitions */
+            -webkit-appearance: none; /* Remove default browser styling for select */
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #fff;
+            width: 100%; /* Make inputs/selects take full width of their parent */
+        }
+        /* Style for the select arrow */
+        .filter-container select {
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234a5568%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13%205.7l-116.8%20116.8L37.2%2075.1a17.6%2017.6%200%200%200-24.8%2024.8l129.2%20129.2c6.8%206.8%2017.9%206.8%2024.8%200l129.2-129.2c6.8-6.9%206.8-18-.1-24.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 12px;
+        }
+
+        .filter-container input[type="date"]:focus,
+        .filter-container select:focus,
+        .time-select-group:focus {
+            border-color: #4299e1; /*    border on focus */
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Soft blue glow */
+            outline: none; /* Remove default outline */
+        }
+
+        .filter-container .form-row { /* Added a helper class for wrapping related form elements */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px; /* Space between elements in a row */
+            justify-content: center; /* Center items in the form row */
+            margin-bottom: 15px; /* Space below the row */
+        }
+
+        .filter-container .form-field { /* Apply to individual field wrappers if needed */
+            flex-grow: 1; /* Allows fields to grow */
+            min-width: 150px; /* Minimum width before wrapping */
+            text-align: left; /* Ensure labels align left within their flex item */
+        }
+
+        /* Specific style for time select parts to appear side-by-side */
+        .time-group-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Space between hour, colon, and minute */
+            margin-bottom: 15px;
+            justify-content: center; /* Center the time group */
+        }
+        .time-select-group {
+            flex-grow: 1; /* Allow hour/minute selects to grow */
+            max-width: 90px; /* Control max width of individual hour/minute selects */
+            margin-bottom: 0; /* Remove extra margin */
+        }
+        .time-group-wrapper span { /* Style for the colon separator */
+            font-size: 1.2em;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+
+        /* Apply Button */
+        .filter-container button {
+            padding: 12px 25px; /* Larger padding for button */
+            font-size: 1.1rem; /* Slightly larger font */
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,123,255,0.2); /* Softer blue shadow */
+            margin-top: 20px; /* More space above button */
+            width: 100%; /* Make button take full width */
+        }
+        .filter-container button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 15px rgba(0,123,255,0.3);
+        }
+        .filter-container button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,123,255,0.2);
+        }
+
+        /* Image Display Area */
+        .image-display-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px; /* Increased gap between image sets */
+            margin-top: 25px;
+        }
+
+        /* Each container for a specific timestamp's images */
+        .image-item-container {
+            display: none; /* Controlled by JS - default hide */
+            text-align: center;
+            border: 1px solid #e2e8f0; /* Lighter border */
+            padding: 20px; /* More padding */
+            border-radius: 10px;
+            background-color: #fdfefe; /* Very light background for image cards */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Subtle shadow */
+            flex: 1 1 45%; /* Allow it to take roughly half width */
+            max-width: 48%; /* Ensure it takes half width of its parent, with gap */
+            box-sizing: border-box;
+            transition: transform 0.2s ease; /* Smooth hover effect */
+        }
+        @media (min-width: 1200px) { /* Adjust for larger screens to potentially show more */
+            .image-item-container {
+                flex: 1 1 30%; /* Maybe 3 images per row */
+                max-width: 32%;
+            }
+        }
+        @media (max-width: 768px) {
+            .top-section-flex {
+                flex-direction: column; /* Stack filter and image sections vertically on small screens */
+            }
+            .filter-container,
+            .image-selection-container {
+                flex: 1 1 100%; /* Take full width on small screens */
+                max-width: none; /* Remove max-width constraint */
+            }
+            .image-item-container {
+                max-width: 95%; /* Wider on smaller screens */
+                flex: 1 1 95%;
+            }
+            .filter-container .form-row {
+                flex-direction: column; /* Stack fields vertically on small screens */
+                align-items: center;
+            }
+            .filter-container .form-field,
+            .filter-container select,
+            .filter-container input[type="date"] {
+                width: 90%; /* Occupy more width */
+                max-width: 300px; /* Limit overall width */
+            }
+            .time-group-wrapper {
+                width: 90%; /* Time group takes full width */
+                max-width: 300px;
+            }
+            .time-select-group {
+                width: 48%; /* Adjust width of hour/minute selects */
+                max-width: 140px; /* Limit max width */
+            }
+            /* Adjust button position for smaller screens */
+            .download-button-container {
+                top: 10px;
+                right: 10px;
+            }
+            .download-button {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Styles for individual image within a timestamp container */
+        .individual-image-wrapper {
+            display: none; /* Hidden by default, shown by JS */
+            margin-bottom: 15px; /* Space between images */
+        }
+        .individual-image-wrapper:last-child {
+            margin-bottom: 0;
+        }
+
+        .image-item-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px; /* Consistent border radius */
+            border: 1px solid #e0e0e0; /* Light border around image */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+        }
+        .image-item-container p {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .no-image-message {
+            color: #e53e3e; /* Red for error messages */
+            font-weight: 600;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #ffebeb;
+            border-radius: 5px;
+            border: 1px solid #fbb4b4;
+            width: 100%; /* Take full width in display area */
+            box-sizing: border-box;
+        }
+
+        /* Data Table Section - Removed scrollable properties */
+        .data-section {
+            /* overflow-y: auto; */ /* Removed to show all data */
+            /* max-height: 400px; */ /* Removed to show all data */
+            margin-bottom: 20px; /* Space below the table */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate; /* Use separate for rounded corners */
+            border-spacing: 0;
+            margin-top: 25px;
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden; /* Ensures rounded corners on content */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        th, td {
+            padding: 12px 15px; /* More padding in cells */
+            text-align: left;
+            border-bottom: 1px solid #edf2f7; /* Lighter horizontal line */
+        }
+        th {
+            background-color: #eef2f7; /* Very light blue header */
+            color: #4a5568;
+            font-weight: 700; /* Bolder headers */
+            text-transform: uppercase; /* Uppercase headers */
+            font-size: 0.9em;
+            letter-spacing: 0.05em;
+            /* Sticky headers are optional now that table doesn't scroll independently */
+            /* position: sticky; */
+            /* top: 0; */
+            /* z-index: 1; */
+        }
+        tr:last-child td {
+            border-bottom: none; /* No border on the last row */
+        }
+        tr:nth-child(even) {
+            background-color: #f8fbfd; /* Very light stripe effect */
+        }
+        tr:hover {
+            background-color: #e0e6f0; /* Soft highlight on hover */
+            cursor: pointer;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>Weather Analysis Report</h1>
+
+    <div class="download-button-container">
+        <button id="downloadReportBtn" class="download-button">
+            Download Report
+        </button>
+        <button class="go-live-button" id="goToLiveBtn">Go to Live</button>
+    </div>
+
+
+    <div class="main-content-wrapper">
+        <div class="top-section-flex">
+            <section class="filter-container">
+                <h2>Filter by Date and Taluk</h2>
+                <form method="GET" action="" id="filterForm">
+                    <div class="form-field">
+                        <label for="dateFilter">Date:</label>
+                        <input
+                            type="date"
+                            id="dateFilter"
+                            name="date"
+                            value="{{ selected_date|default:'' }}"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="districtFilter" class="mt-4">Taluk:</label>
+                        <select
+                            id="districtFilter"
+                            name="district"
+                        >
+                            <!-- <option value="">-- Select a Taluk --</option> -->
+                            {# Changed "All Districts" to "All Ramanathapuram Taluks" for clarity #}
+                            <option value="All Ramanathapuram Taluks" {% if selected_district == 'All Ramanathapuram Taluks' %}selected{% endif %}>All Ramanathapuram Taluks</option>
+                            {% for taluk in ramanathapuram_taluks %}
+                                {% if taluk %}
+                                    <option value="{{ taluk }}" {% if selected_district == taluk %}selected{% endif %}>{{ taluk }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="mt-4">From Time:</label>
+                        <div class="time-group-wrapper">
+                            <select id="startTimeHour" name="start_time_hour" class="time-select-group"></select>
+                            <span>:</span>
+                            <select id="startTimeMinute" name="start_time_minute" class="time-select-group"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="mt-4">To Time:</label>
+                        <div class="time-group-wrapper">
+                            <select id="endTimeHour" name="end_time_hour" class="time-select-group"></select>
+                            <span>:</span>
+                            <select id="endTimeMinute" name="end_time_minute" class="time-select-group"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="imageSelector" class="mt-4">Select Image View:</label>
+                        <select id="imageSelector"
+                                name="image_view_type"
+                        >
+                            {# Options for Ramanathapuram automation images - these should now be the primary options #}
+                            <option value="ramanathapuram_cropped_screenshot" {% if selected_image_view == 'ramanathapuram_cropped_screenshot' %}selected{% endif %}>Ramanathapuram Cropped Screenshot (Live)</option>
+                            <option value="ramanathapuram_masked_taluks" {% if selected_image_view == 'ramanathapuram_masked_taluks' %}selected{% endif %}>Ramanathapuram Taluk Masks (Live)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">
+                        Apply Filter
+                    </button>
+                </form>
+            </section>
+
+            <section class="image-selection-container" id="imageDisplaySection">
+                <h2>Image View for Selected Time Range</h2>
+                <div class="image-display-area">
+                    {# Display images for Ramanathapuram automation #}
+                    {# The {% elif ramanathapuram_automation_images and selected_district == 'Ramanathapuram' %} condition is simplified #}
+                    {% if ramanathapuram_automation_images %}
+                        {% for image_set in ramanathapuram_automation_images %}
+
+                            <div class="image-item-container" data-timestamp="{{ image_set.timestamp|date:'YmdHis' }}">
+                                <h3>{{ image_set.timestamp|date:'H:i' }} (on {{ image_set.timestamp|date:'Y-m-d' }})</h3>
+
+                                {# Ramanathapuram Cropped Screenshot (renamed from Full Screenshot) #}
+                                <div class="individual-image-wrapper ramanathapuram_cropped_screenshot_view" style="display: block;">
+                                    {% if image_set.cropped_screenshot %}
+                                        <img src="{{ image_set.cropped_screenshot }}" alt="Ramanathapuram Cropped Screenshot at {{ image_set.timestamp|date:'H:i' }}" style="max-width: 100%; border: 2px solid #007bff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                        <p style="font-weight: 600; color: #2b6cb0;">Ramanathapuram Cropped Screenshot</p>
+                                    {% else %}
+                                        <p class="no-image-message">Ramanathapuram cropped screenshot not available for this time.</p>
+                                    {% endif %}
+                                </div>
+
+                                {# Ramanathapuram Masked Taluk Images #}
+                                {% if image_set.masked_taluk_images %}
+                                    <div class="individual-image-wrapper ramanathapuram_masked_taluks_view">
+                                        <h4>Masked Taluks for Ramanathapuram:</h4>
+                                        <div class="masked-taluks-grid">
+                                            {% if selected_district == 'All Ramanathapuram Taluks' %}
+                                                {% for taluk_name, taluk_image_data in image_set.masked_taluk_images.items %}
+                                                    <div class="taluk-image-item">
+                                                        <img src="{{ taluk_image_data }}" alt="{{ taluk_name }} Masked Image at {{ image_set.timestamp|date:'H:i' }}">
+                                                        <p>{{ taluk_name }}</p>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for taluk_name, taluk_image_data in image_set.masked_taluk_images.items|dictsort:"desc" %}
+                                                    {% if taluk_name == selected_district %}
+                                                        <div class="taluk-image-item">
+                                                            <img src="{{ taluk_image_data }}" alt="{{ taluk_name }} Masked Image at {{ image_set.timestamp|date:'H:i' }}">
+                                                            <p>{{ taluk_name }}</p>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {% if image_set.masked_taluk_images.items|length == 0 or not image_set.masked_taluk_images.selected_district %}
+                                                    <p class="no-image-message">No masked taluk image found for {{ selected_district }} at this time.</p>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <p class="no-image-message">No masked taluk images found for Ramanathapuram.</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-image-message">No images found for the selected date and time range. Please adjust filters.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        {# Cloud Analysis data table #}
+        <section class="data-section" id="cloudSection">
+            <h2>Cloud Analysis Data</h2>
+            {% if cloud_analysis_data %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Taluks</th> {# Changed "Districts" to "Taluks" #}
+                        <th>Values</th>
+                        <th>Type</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in cloud_analysis_data %}
+                    <tr>
+                        <td>{{ data.city }}</td>
+                        <td>{{ data.values }}</td>
+                        <td>{{ data.type }}</td>
+                        <td>{{ data.timestamp|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-image-message">No Cloud Analysis data available for the selected date {% if selected_district != 'All Ramanathapuram Taluks' %} and taluk "{{ selected_district }}"{% endif %}.</p> {# Updated message #}
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('goToLiveBtn').addEventListener('click', function() {
+            window.location.href = '/live/';
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageDisplaySection = document.getElementById('imageDisplaySection');
+            const cloudSection = document.getElementById('cloudSection');
+            const imageSelector = document.getElementById('imageSelector');
+            const dateFilter = document.getElementById('dateFilter');
+            const districtFilter = document.getElementById('districtFilter');
+
+            // Select all timestamp-specific image containers
+            const allTimestampImageContainers = document.querySelectorAll('.image-item-container');
+
+            // Helper function to format date to YYYY-MM-DD
+            function formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // Function to populate hour and minute dropdowns
+            function populateTimeDropdowns(hourSelectId, minuteSelectId, initialTimeStr) {
+                const hourSelect = document.getElementById(hourSelectId);
+                const minuteSelect = document.getElementById(minuteSelectId);
+
+                hourSelect.innerHTML = '';
+                minuteSelect.innerHTML = '';
+
+                let initialHour = '00';
+                let initialMinute = '00';
+
+                // Prioritize Django context value if available (e.g., after form submission)
+                if (initialTimeStr && initialTimeStr.includes(':')) {
+                    [initialHour, initialMinute] = initialTimeStr.split(':');
+                } else {
+                    // If initialTimeStr is not provided or invalid, try URL parameters (for subsequent loads from URL)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const paramHour = urlParams.get(hourSelect.name);
+                    const paramMinute = urlParams.get(minuteSelect.name);
+
+                    if (paramHour) initialHour = paramHour;
+                    if (paramMinute) initialMinute = paramMinute;
+                }
+
+                // Populate hours (00 to 23)
+                for (let h = 0; h < 24; h++) {
+                    const hourValue = String(h).padStart(2, '0');
+                    const option = document.createElement('option');
+                    option.value = hourValue;
+                    option.textContent = hourValue;
+                    if (hourValue === initialHour) {
+                        option.selected = true;
+                    }
+                    hourSelect.appendChild(option);
+                }
+
+                // Populate minutes (00, 15, 30, 45)
+                for (let m = 0; m < 60; m += 15) {
+                    const minuteValue = String(m).padStart(2, '0');
+                    const option = document.createElement('option');
+                    option.value = minuteValue;
+                    option.textContent = minuteValue;
+                    if (minuteValue === initialMinute) {
+                        option.selected = true;
+                    }
+                    minuteSelect.appendChild(option);
+                }
+            }
+
+            // --- Set Default Date and Time on Page Load ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedDateFromUrl = urlParams.get('date');
+
+            // Set Date: Only set if not already present from URL parameters or Django context
+            if (!dateFilter.value && !selectedDateFromUrl) {
+                const today = new Date();
+                dateFilter.value = formatDate(today);
+            }
+
+            // Set Times: Only set if not already present from URL parameters or Django context
+            const selectedStartTimeFromDjango = "{{ selected_start_time|default:'' }}";
+            const selectedEndTimeFromDjango = "{{ selected_end_time|default:'' }}";
+
+            // If no initial time values are from Django context, calculate defaults
+            if (!selectedStartTimeFromDjango && !urlParams.get('start_time_hour')) {
+                const now = new Date();
+                let currentMinute = now.getMinutes();
+                let currentHour = now.getHours();
+
+                // Round up minutes to the nearest 15 for FROM TIME
+                let fromMinute = Math.ceil(currentMinute / 15) * 15;
+                let fromHour = currentHour;
+
+                if (fromMinute === 60) {
+                    fromMinute = 0;
+                    fromHour = (fromHour + 1) % 24;
+                }
+
+                const defaultStartTime = `${String(fromHour).padStart(2, '0')}:${String(fromMinute).padStart(2, '0')}`;
+                populateTimeDropdowns('startTimeHour', 'startTimeMinute', defaultStartTime);
+
+                // Calculate TO TIME as 15 minutes after FROM TIME
+                let toMinute = fromMinute + 15;
+                let toHour = fromHour;
+
+                if (toMinute === 60) {
+                    toMinute = 0;
+                    toHour = (toHour + 1) % 24;
+                }
+
+                const defaultEndTime = `${String(toHour).padStart(2, '0')}:${String(toMinute).padStart(2, '0')}`;
+                populateTimeDropdowns('endTimeHour', 'endTimeMinute', defaultEndTime);
+
+            } else {
+                // If Django context or URL params exist, use those to populate
+                populateTimeDropdowns('startTimeHour', 'startTimeMinute', selectedStartTimeFromDjango);
+                populateTimeDropdowns('endTimeHour', 'endTimeMinute', selectedEndTimeFromDjango);
+            }
+
+            // --- Image Display Logic for Multiple Images ---
+            function showSelectedImageView() {
+                const viewType = imageSelector.value;
+                const selectedDistrict = districtFilter.value; // Get selected district/taluk
+
+                // Hide all individual image wrappers within all timestamp containers initially
+                document.querySelectorAll('.individual-image-wrapper').forEach(imgWrapper => {
+                    imgWrapper.style.display = 'none';
+                });
+
+                // Hide all timestamp containers initially
+                allTimestampImageContainers.forEach(container => {
+                    container.style.display = 'none';
+                });
+
+                // Iterate through each timestamp container and show/hide images based on selected view type
+                allTimestampImageContainers.forEach(tsContainer => {
+                    let hasVisibleImage = false; // Flag to track if any image is visible in this timestamp container
+
+                    // Logic for Ramanathapuram automation images (now the primary logic)
+                    if (viewType === 'ramanathapuram_full_screenshot') {
+                        const img = tsContainer.querySelector('.ramanathapuram_full_screenshot_view');
+                        if (img) {
+                            img.style.display = 'block';
+                            hasVisibleImage = true;
+                        }
+                    } else if (viewType === 'ramanathapuram_cropped_screenshot') {
+                        const img = tsContainer.querySelector('.ramanathapuram_cropped_screenshot_view');
+                        if (img) {
+                            img.style.display = 'block';
+                            hasVisibleImage = true;
+                        }
+                    } else if (viewType === 'ramanathapuram_masked_taluks') {
+                        const img = tsContainer.querySelector('.ramanathapuram_masked_taluks_view');
+                        if (img) {
+                            img.style.display = 'block';
+                            hasVisibleImage = true;
+                        }
+                    }
+
+                    // Only show the entire timestamp container if it contains a visible image
+                    if (hasVisibleImage) {
+                        tsContainer.style.display = 'block';
+                    }
+                });
+            }
+
+            // Listen for changes on the image selector dropdown
+            imageSelector.addEventListener('change', showSelectedImageView);
+            // Listen for changes on the district filter to update image view options
+            districtFilter.addEventListener('change', function() {
+                // Submit the form to reload the page with the new district selected, which will refresh the image view options
+                document.getElementById('filterForm').submit();
+            });
+
+
+            // Initial display call based on selected_image_view from Django context or URL
+            const initialImageView = imageSelector.value;
+            if (initialImageView) {
+                showSelectedImageView();
+                // Ensure the sections are visible if filters result in data
+                imageDisplaySection.style.display = 'block';
+                cloudSection.style.display = 'block';
+            } else {
+                // If no image view is selected, initially hide all image items
+                allTimestampImageContainers.forEach(container => container.style.display = 'none');
+            }
+
+            // Download button functionality
+            const downloadReportBtn = document.getElementById('downloadReportBtn');
+            const filterForm = document.getElementById('filterForm'); // Get a reference to your form
+
+            downloadReportBtn.addEventListener('click', function() {
+                // Get the current filter parameters from the form
+                const formData = new FormData(filterForm);
+                const queryParams = new URLSearchParams(formData).toString();
+                const downloadUrl = `/download-report/?${queryParams}`;
+                window.location.href = downloadUrl;
+            });
+        });
+    </script>
+</body>
+</html>

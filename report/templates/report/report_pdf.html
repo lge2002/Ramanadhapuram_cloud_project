@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ramanathapuram Cloud Analysis Report</title>
+    <style>
+        /* Base styling for the PDF document */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20mm; /* Standard page margins for print */
+            font-size: 10pt;
+            color: #333;
+            line-height: 1.4;
+        }
+        h1, h2, h3 {
+            color: #1a1a1a;
+            text-align: center;
+            margin-bottom: 0.5em;
+        }
+        h1 {
+            font-size: 18pt;
+            margin-top: 15mm;
+            margin-bottom: 20mm;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+        }
+        h2 {
+            font-size: 14pt;
+            margin-top: 15mm;
+            margin-bottom: 5mm;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            font-size: 12pt;
+            color: #555;
+            margin-top: 10mm;
+            margin-bottom: 5mm;
+        }
+        .section {
+            margin-bottom: 10mm;
+            page-break-inside: avoid; /* Prevents breaking a section across pages if possible */
+        }
+        .filter-summary p {
+            margin: 2mm 0;
+            line-height: 1.5;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5mm;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            word-wrap: break-word; /* Ensures long text wraps */
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .image-container {
+            text-align: center;
+            margin-top: 10mm;
+            page-break-inside: avoid; /* Keeps image and its caption together */
+        }
+        .image-container img {
+            max-width: 90%; /* Scale image to fit within page width */
+            height: auto;
+            border: 1px solid #eee;
+            margin-bottom: 5px;
+        }
+        .image-container p {
+            font-size: 9pt;
+            color: #666;
+            margin-top: 2px;
+        }
+        .no-data-message {
+            text-align: center;
+            color: #777;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            margin-top: 10px;
+        }
+        .report-info {
+            text-align: right;
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 5mm;
+        }
+
+        
+    </style>
+</head>
+<body>
+
+    <h1>Weather Analysis Report</h1>
+    <p class="report-info">Report Generated: {{ report_generation_time|date:"Y-m-d H:i:s" }}</p>
+
+    <div class="section">
+        <h2>Report Filters Applied</h2>
+        <div class="filter-summary">
+            <p><strong>Date:</strong> {{ selected_date|default:"N/A" }}</p>
+            <p><strong>District:</strong> {{ selected_district|default:"All Districts" }}</p>
+            <p><strong>Time Range:</strong> {{ selected_start_time|default:"N/A" }} to {{ selected_end_time|default:"N/A" }}</p>
+            <p><strong>Image View Type:</strong> {{ selected_image_view_label|default:"No Specific View" }}</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Cloud Analysis Data</h2>
+        {% if cloud_analysis_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Districts</th>
+                    <th>Values</th>
+                    <th>Type</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in cloud_analysis_data %}
+                <tr>
+                    <td>{{ data.city }}</td>
+                    <td>{{ data.values }}</td>
+                    <td>{{ data.type }}</td>
+                    <td>{{ data.timestamp|date:"Y-m-d H:i:s" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data-message">No Cloud Analysis data available for the selected filters.</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>Associated Images</h2>
+        {% if generated_images_for_display %}
+            {% for image_set in generated_images_for_display %}
+                <h3>Images for {{ image_set.timestamp|date:'H:i' }} (on {{ image_set.timestamp|date:'Y-m-d' }})</h3>
+                <div class="image-container">
+                    {# IMPORTANT: The Django view rendering this template MUST ensure these paths are absolute file system paths with FORWARD SLASHES #}
+                    {# Example: C:/path/to/your/image.png, NOT C:\path\to\your\image.png #}
+
+                    {% if selected_image_view == 'cropped_tn' %}
+                        {% if image_set.cropped_tn_path_abs %}
+                            <!-- Removed file:/// prefix -->
+                            <img src="{{ image_set.cropped_tn_path_abs }}" alt="Cropped Tamil Nadu Image">
+                            <p>Cropped Tamil Nadu (Radar Only)</p>
+                        {% else %}
+                            <p class="no-data-message">Cropped TN image N/A for this timestamp.</p>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if selected_image_view == 'masked_district' %}
+                        {% if image_set.masked_district_path_abs %}
+                            <!-- Removed file:/// prefix -->
+                            <img src="{{ image_set.masked_district_path_abs }}" alt="Shape-Masked District Image">
+                            <p>Shape-Masked {{ selected_district|default:"District" }}</p>
+                        {% else %}
+                            <p class="no-data-message">Shape-masked image for {{ selected_district|default:"District" }} N/A for this timestamp.</p>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if selected_image_view == 'tn_overlay' %}
+                        {% if image_set.aligned_overlay_tn_path_abs %}
+                            <!-- Removed file:/// prefix -->
+                            <img src="{{ image_set.aligned_overlay_tn_path_abs }}" alt="Tamil Nadu with Shape Overlay">
+                            <p>Overall TN Map with District Outlines</p>
+                        {% else %}
+                            <p class="no-data-message">Overall TN Map overlay N/A for this timestamp.</p>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if selected_image_view == 'combined_full_tn' %}
+                        {% if image_set.cropped_tn_path_abs %}
+                            <!-- Removed file:/// prefix -->
+                            <img src="{{ image_set.cropped_tn_path_abs }}" alt="Cropped Tamil Nadu Image">
+                            <p>Cropped Tamil Nadu (Radar Only)</p>
+                        {% else %}
+                            <p class="no-data-message">Cropped TN image N/A for this timestamp in combined view.</p>
+                        {% endif %}
+                        {% if image_set.aligned_overlay_tn_path_abs %}
+                            <!-- Removed file:/// prefix -->
+                            <img src="{{ image_set.aligned_overlay_tn_path_abs }}" alt="Tamil Nadu with Shape Overlay">
+                            <p>Overall TN Map with District Outlines</p>
+                        {% else %}
+                            <p class="no-data-message">Overall TN Map overlay N/A for this timestamp in combined view.</p>
+                        {% endif %}
+                    {% endif %}
+                </div> {# Closes .image-container #}
+            {% endfor %} {# Closes the for loop for generated_images_for_display #}
+        {% else %}
+            <p class="no-data-message">No images found for the selected criteria and image view type.</p>
+        {% endif %}
+    </div> {# Closes .section for Associated Images #}
+
+</body>
+</html>
