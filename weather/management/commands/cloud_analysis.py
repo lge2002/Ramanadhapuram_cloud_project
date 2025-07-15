@@ -30,11 +30,11 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 
 warnings.filterwarnings("ignore")
-
+ 
 class Command(BaseCommand):
     help = 'Automates screenshot capture from Windy.com, crops, masks, and analyzes cloud levels for Ramanathapuram district (taluk-wise), then saves to DB, JSON, PDF, and pushes to API.'
 
-    API_ENDPOINT_URL = "http://172.16.7.118:8003/api/tamilnadu/satellite/push.windy_radar_data.php"
+    API_ENDPOINT_URL = "http://172.16.7.118:8003/api/tamilnadu/satellite/push.windy_radar_data.php?type"
 
     # --- Geo-alignment parameters for Ramanathapuram on Windy.com ---
     CROP_BOX = (575, 135, 1060, 610) # Pixel coordinates (left, upper, right, lower) for the region of interest
@@ -132,6 +132,11 @@ class Command(BaseCommand):
         rounded_dt = rounded_dt.replace(second=0, microsecond=0)
         return rounded_dt
 
+    def _print_time_rounding(self, dt_object, minutes=15):
+        rounded_dt = self._round_to_nearest_minutes(dt_object, minutes)
+        self.stdout.write(self.style.SUCCESS(f"Raw time: {dt_object.strftime('%Y-%m-%d %H:%M:%S')} | Rounded time: {rounded_dt.strftime('%Y-%m-%d %H:%M:%S')} (to nearest {minutes} min)"))
+        return rounded_dt
+
     def _is_cloud_pixel(self, rgb_pixel):
         r, g, b = rgb_pixel
         hsv_pixel = cv2.cvtColor(np.uint8([[[r, g, b]]]), cv2.COLOR_RGB2HSV)[0][0]
@@ -174,6 +179,8 @@ class Command(BaseCommand):
 
             # --- 2. Setup Output Paths and Timestamps (inside the loop for new folders each run) ---
             current_time = datetime.now()
+            # Show raw and rounded time in terminal
+            rounded_time = self._print_time_rounding(current_time, 15)
             timestamp = current_time.strftime('%Y-%m-%d_%H-%M-%S')
             base_folder = os.path.join(settings.BASE_DIR, "images", self.DISTRICT_NAME.lower().replace(" ", "_"), timestamp)
             os.makedirs(base_folder, exist_ok=True)
@@ -221,23 +228,23 @@ class Command(BaseCommand):
                 except Exception:
                     self.stdout.write("No cookie consent banner found or couldn't click it. Continuing...")
 
-                try:
-                    # Click the main layer control button (if it exists and needs to be opened)
-                    layer_button = wait.until(EC.element_to_be_clickable((By.ID, "top-layer-control")))
-                    layer_button.click()
-                    time.sleep(1)
-                    self.stdout.write("Clicked layer control button.")
-                except Exception:
-                    self.stdout.write("No layer control button found or couldn't click it. Continuing...")
+                # try:
+                #     # Click the main layer control button (if it exists and needs to be opened)
+                #     layer_button = wait.until(EC.element_to_be_clickable((By.ID, "top-layer-control")))
+                #     layer_button.click()
+                #     time.sleep(1)
+                #     self.stdout.write("Clicked layer control button.")
+                # except Exception:
+                #     self.stdout.write("No layer control button found or couldn't click it. Continuing...")
 
-                try:
-                    # Select Satellite layer
-                    satellite_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@data-id='satellite']//div[contains(@class,'name') and text()='Satellite']")))
-                    satellite_btn.click()
-                    time.sleep(3)
-                    self.stdout.write("Selected Satellite layer.")
-                except Exception:
-                    self.stdout.write("No Satellite layer button found or couldn't click it. Assuming default layer is sufficient.")
+                # try:
+                #     # Select Satellite layer
+                    # satellite_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@data-id='satellite']//div[contains(@class,'name') and text()='Satellite']")))
+                    # satellite_btn.click()
+                #     time.sleep(3)
+                #     self.stdout.write("Selected Satellite layer.")
+                # except Exception:
+                #     self.stdout.write("No Satellite layer button found or couldn't click it. Assuming default layer is sufficient.")
 
                 try:
                     # Select Visible layer within Satellite+ (if applicable)
@@ -398,7 +405,7 @@ class Command(BaseCommand):
                         "taluk": taluk_name,
                         "values": cloud_percentage_taluk_str,
                         "type": "Cloud Coverage",
-                        "timestamp": timestamp_for_db.strftime('%Y-%m-%d %H:%M:%S')
+                        "timestamp": rounded_time.strftime('%Y-%m-%d %H:%M:%S')
                     }
                     current_run_results.append(taluk_data)
 
@@ -479,5 +486,5 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Windy.com cloud analysis automation completed for this run."))
             
             # --- Delay before the next loop iteration ---
-            self.stdout.write(f"Waiting 2 minutes before next full run...\n")
+            self.stdout.write(f"Waiting 5 minutes before next full run...\n")
             time.sleep(300) # This is the delay between full runs
