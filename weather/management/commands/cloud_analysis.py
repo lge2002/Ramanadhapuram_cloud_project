@@ -29,7 +29,7 @@ from weather.models import Cloud_ramanathapuram # Ensure this model is correctly
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore")   
  
 class Command(BaseCommand):
     help = 'Automates screenshot capture from Windy.com, crops, masks, and analyzes cloud levels for Ramanathapuram district (taluk-wise), then saves to DB, JSON, PDF, and pushes to API.'
@@ -83,10 +83,10 @@ class Command(BaseCommand):
             self.stderr.write(self.style.WARNING(f"Warning: Linked file not found for PDF: {path} (Original URI: {uri})"))
             return uri
 
-    def _generate_and_save_automation_pdf(self, results_data, current_time, base_folder,
-                                          full_screenshot_path_abs, cropped_screenshot_path_abs,
-                                          masked_image_paths,
-                                          json_output_content):
+    def _generate_and_save_automation_pdf(self, results_data, current_time, base_folder, # current_time here will be rounded_time
+                                         full_screenshot_path_abs, cropped_screenshot_path_abs,
+                                         masked_image_paths,
+                                         json_output_content):
         """
         Generates a PDF report using xhtml2pdf from a Django template.
         """
@@ -102,7 +102,7 @@ class Command(BaseCommand):
         }
 
         context = {
-            'current_time': current_time,
+            'current_time': current_time, # This now correctly uses the rounded_time passed in
             'district_name': self.DISTRICT_NAME,
             'current_run_results': results_data,
             'full_screenshot_path_abs': f'file:///{full_screenshot_path_for_html}',
@@ -125,12 +125,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"PDF report generated and saved successfully to: {pdf_output_path}"))
 
     def _round_to_nearest_minutes(self, dt_object, minutes=15):
-        total_minutes = dt_object.hour * 60 + dt_object.minute + dt_object.second / 60.0
-        rounded_total_minutes = round(total_minutes / minutes) * minutes
-        diff_minutes = rounded_total_minutes - total_minutes
-        rounded_dt = dt_object + timedelta(minutes=diff_minutes)
-        rounded_dt = rounded_dt.replace(second=0, microsecond=0)
-        return rounded_dt
+        # Remove seconds and microseconds for accurate rounding
+        dt_object = dt_object.replace(second=0, microsecond=0)
+        discard = timedelta(minutes=dt_object.minute % minutes)
+        dt_floor = dt_object - discard
+        dt_ceil = dt_floor + timedelta(minutes=minutes)
+        # Choose the closest rounded time
+        if (dt_object - dt_floor) < (dt_ceil - dt_object):
+            return dt_floor
+        else:
+            return dt_ceil
 
     def _print_time_rounding(self, dt_object, minutes=15):
         rounded_dt = self._round_to_nearest_minutes(dt_object, minutes)
@@ -142,10 +146,14 @@ class Command(BaseCommand):
         hsv_pixel = cv2.cvtColor(np.uint8([[[r, g, b]]]), cv2.COLOR_RGB2HSV)[0][0]
         h, s, v = hsv_pixel
 
+        # Adjusted cloud detection logic
+        # High value (brightness) and low saturation often indicates white/grey clouds
         if v > 190 and s < 60:
             return True
+        # Very high value (very bright)
         if v > 220:
             return True
+        # Check for specific pale/white RGB ranges with low saturation
         if (180 <= r <= 255 and 180 <= g <= 255 and 190 <= b <= 255) and (s < 90):
             return True
         return False
@@ -178,19 +186,22 @@ class Command(BaseCommand):
             self.stdout.write(f"\n--- Starting new automation run at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
 
             # --- 2. Setup Output Paths and Timestamps (inside the loop for new folders each run) ---
-            current_time = datetime.now()
+            current_raw_time = datetime.now() # Get the raw current time
             # Show raw and rounded time in terminal
-            rounded_time = self._print_time_rounding(current_time, 15)
-            timestamp = current_time.strftime('%Y-%m-%d_%H-%M-%S')
-            base_folder = os.path.join(settings.BASE_DIR, "images", self.DISTRICT_NAME.lower().replace(" ", "_"), timestamp)
+            rounded_time = self._print_time_rounding(current_raw_time, 15) # Pass raw time for rounding
+            # Remove seconds and microseconds for folder/file names
+            rounded_time_no_sec = rounded_time.replace(second=0, microsecond=0)
+            timestamp_str_for_filenames = rounded_time_no_sec.strftime('%Y-%m-%d_%H-%M-%S')
+            
+            base_folder = os.path.join(settings.BASE_DIR, "images", self.DISTRICT_NAME.lower().replace(" ", "_"), timestamp_str_for_filenames)
             os.makedirs(base_folder, exist_ok=True)
             full_image_folder = os.path.join(base_folder, "full")
             cropped_image_folder = os.path.join(base_folder, "cropped")
             os.makedirs(full_image_folder, exist_ok=True)
             os.makedirs(cropped_image_folder, exist_ok=True)
-            full_screenshot_path = os.path.join(full_image_folder, "windy_full.png") # Changed path to be inside full_image_folder
+            full_screenshot_path = os.path.join(full_image_folder, "windy_full.png") 
 
-            cropped_screenshot_path = os.path.join(cropped_image_folder, "ramanathapuram_cropped.png") # Changed path to be inside cropped_image_folder
+            cropped_screenshot_path = os.path.join(cropped_image_folder, "ramanathapuram_cropped.png") 
             json_output_path = os.path.join(base_folder, "cloud_analysis_results.json")
             masked_image_base_folder = os.path.join(base_folder, "masked_taluks")
             os.makedirs(masked_image_base_folder, exist_ok=True)
@@ -203,8 +214,8 @@ class Command(BaseCommand):
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
             options.add_argument("--window-size=1920,1080")
-            options.add_argument("--start-maximized") # Use maximize instead of fullscreen for more consistent window behavior
-            # options.add_argument("--headless") # Uncomment if you want to run without a visible browser
+            options.add_argument("--start-maximized") 
+            # options.add_argument("--headless") # Uncomment for headless operation
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--disable-infobars")
@@ -213,11 +224,11 @@ class Command(BaseCommand):
             try:
                 service = Service(ChromeDriverManager().install())
                 driver = webdriver.Chrome(service=service, options=options)
-                wait = WebDriverWait(driver, 20) # Increased wait time
+                wait = WebDriverWait(driver, 20) 
 
                 driver.get(self.WINDY_URL)
                 self.stdout.write(f"Navigated to {self.WINDY_URL}. Waiting for page to load...")
-                time.sleep(7)
+                time.sleep(7) # Give extra time for elements to load, especially maps
 
                 try:
                     # Look for multiple common cookie consent selectors
@@ -228,32 +239,21 @@ class Command(BaseCommand):
                 except Exception:
                     self.stdout.write("No cookie consent banner found or couldn't click it. Continuing...")
 
-                # try:
-                #     # Click the main layer control button (if it exists and needs to be opened)
-                #     layer_button = wait.until(EC.element_to_be_clickable((By.ID, "top-layer-control")))
-                #     layer_button.click()
-                #     time.sleep(1)
-                #     self.stdout.write("Clicked layer control button.")
-                # except Exception:
-                #     self.stdout.write("No layer control button found or couldn't click it. Continuing...")
-
-                # try:
-                #     # Select Satellite layer
-                    # satellite_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@data-id='satellite']//div[contains(@class,'name') and text()='Satellite']")))
-                    # satellite_btn.click()
-                #     time.sleep(3)
-                #     self.stdout.write("Selected Satellite layer.")
-                # except Exception:
-                #     self.stdout.write("No Satellite layer button found or couldn't click it. Assuming default layer is sufficient.")
-
                 try:
                     # Select Visible layer within Satellite+ (if applicable)
+                    # This XPath is quite specific and might change. Adapt if needed.
                     visible_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='plugin-radar-plus']/div[1]/div[6]/div[1]/div[2]")))
                     visible_btn.click()
-                    time.sleep(3)
+                    time.sleep(3) # Give time for the layer to change
                     self.stdout.write("Selected Visible layer within Satellite+.")
                 except Exception:
                     self.stdout.write("No 'Visible' layer button found or couldn't click it. Assuming current sub-layer is sufficient.")
+                
+                # --- Crucial: Wait for the radar/satellite animation to finish or for the map to stabilize ---
+                # This is a generic wait. If the map content changes during animation, your screenshot might be inconsistent.
+                # Consider using a more robust wait condition if map elements or data specifically appear/disappear.
+                self.stdout.write("Waiting for map animation/data to stabilize (additional 5 seconds)...")
+                time.sleep(5) 
 
                 driver.save_screenshot(full_screenshot_path)
                 self.stdout.write(self.style.SUCCESS(f"Full screenshot saved at {full_screenshot_path}"))
@@ -267,7 +267,7 @@ class Command(BaseCommand):
                 # Close browser and then continue to the next loop iteration after sleep.
                 if driver: driver.quit() 
                 self.stdout.write(f"Waiting {120 / 60} minutes before next run due to Selenium error...\n")
-                time.sleep(120)
+                time.sleep(120) # Wait 2 minutes before retrying the full run
                 continue # Skip the rest of the current loop iteration
 
             finally:
@@ -281,7 +281,7 @@ class Command(BaseCommand):
                 
                 # Validate CROP_BOX before cropping
                 if not (0 <= self.CROP_BOX[0] < self.CROP_BOX[2] <= full_img.width and
-                        0 <= self.CROP_BOX[1] < self.CROP_BOX[3] <= full_img.height):
+                                0 <= self.CROP_BOX[1] < self.CROP_BOX[3] <= full_img.height):
                     self.stderr.write(self.style.ERROR(f"ERROR: CROP_BOX coordinates ({self.CROP_BOX}) are invalid or out of bounds for the screenshot dimensions ({full_img.width}x{full_img.height})."))
                     self.stderr.write(self.style.ERROR("Please re-calibrate CROP_BOX based on a full screenshot taken with current browser settings."))
                     # Skip image processing and analysis for this run if crop box is invalid
@@ -298,9 +298,7 @@ class Command(BaseCommand):
                 time.sleep(120)
                 continue # Skip to next loop iteration
 
-            # --- 5. Generate Overall District Overlay Plot (Outer Boundary Only) ---
-            # This section is commented out in your provided code, so it remains commented.
-            # If you uncomment it, ensure matplotlib is installed and correctly configured.
+            # --- 5. Prepare Image for Analysis and Transform Shapefile ---
             self.stdout.write(f"Image extent used for plotting: LON({self.MIN_LON}-{self.MAX_LON}), LAT({self.MIN_LAT}-{self.MAX_LAT})")
             center_x = (self.MIN_LON + self.MAX_LON) / 2
             center_y = (self.MIN_LAT + self.MAX_LAT) / 2
@@ -360,7 +358,6 @@ class Command(BaseCommand):
                                     taluk_transparent_image.putpixel((x, y), (r, g, b, 255)) # Make visible in masked image
                                     if self._is_cloud_pixel((r, g, b)):
                                         cloudy_taluk_pixels += 1
-                    
                     if total_taluk_pixels == 0:
                         self.stderr.write(self.style.WARNING(f"     Warning: Taluk '{taluk_name}' has 0 total pixels after masking. This may indicate a geometry or alignment issue."))
                         cloud_percentage_taluk = 0.0
@@ -378,7 +375,9 @@ class Command(BaseCommand):
 
                     self.stdout.write(f"     Cloud coverage for {taluk_name}: {cloud_percentage_taluk_str} (Total pixels: {total_taluk_pixels}, Cloudy pixels: {cloudy_taluk_pixels})")
 
-                    timestamp_for_db = current_time
+                    # --- Use rounded_time for database save ---
+                    # Always use rounded_time with seconds and microseconds set to zero for DB
+                    timestamp_for_db = rounded_time.replace(second=0, microsecond=0)
                     if settings.USE_TZ:
                         target_tz = pytz.timezone(settings.TIME_ZONE)
                         if timestamp_for_db.tzinfo is None or timestamp_for_db.tzinfo.utcoffset(timestamp_for_db) is None:
@@ -390,13 +389,13 @@ class Command(BaseCommand):
                     try:
                         Cloud_ramanathapuram.objects.update_or_create(
                             city=taluk_name,
-                            timestamp=timestamp_for_db,
+                            timestamp=timestamp_for_db, # Use the rounded and localized time here
                             defaults={
                                 "values": cloud_percentage_taluk_str,
                                 "type": "Cloud Coverage"
                             }
                         )
-                        self.stdout.write(self.style.SUCCESS(f"     Cloud analysis for {taluk_name} saved/updated in database."))
+                        self.stdout.write(self.style.SUCCESS(f"     Cloud analysis for {taluk_name} saved/updated in database (rounded to 15 min)."))
                     except Exception as e:
                         self.stderr.write(self.style.ERROR(f"     Error saving {taluk_name} to Django model: {e}"))
 
@@ -405,7 +404,7 @@ class Command(BaseCommand):
                         "taluk": taluk_name,
                         "values": cloud_percentage_taluk_str,
                         "type": "Cloud Coverage",
-                        "timestamp": rounded_time.strftime('%Y-%m-%d %H:%M:%S')
+                        "timestamp": timestamp_for_db.strftime('%Y-%m-%d %H:%M:%S') # Use rounded_time for JSON payload as well
                     }
                     current_run_results.append(taluk_data)
 
@@ -427,7 +426,7 @@ class Command(BaseCommand):
 
                 self._generate_and_save_automation_pdf(
                     current_run_results,
-                    current_time,
+                    rounded_time, # Corrected: Pass the rounded time to the PDF generation function
                     base_folder,
                     full_screenshot_path_abs,
                     cropped_screenshot_path_abs,
@@ -487,4 +486,4 @@ class Command(BaseCommand):
             
             # --- Delay before the next loop iteration ---
             self.stdout.write(f"Waiting 5 minutes before next full run...\n")
-            time.sleep(300) # This is the delay between full runs
+            time.sleep(300) # This is the delay between full runs why the data was not roundoff for 15 minutes?
